@@ -4,8 +4,8 @@ namespace Spatie\Activitylog;
 
 use Closure;
 use Illuminate\Auth\AuthManager;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Config\Repository;
-use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Exceptions\CouldNotLogActivity;
 
 class CauserResolver
@@ -16,7 +16,7 @@ class CauserResolver
 
     protected Closure | null $resolverOverride = null;
 
-    protected Model | null $causerOverride = null;
+    protected Authenticatable | null $causerOverride = null;
 
     public function __construct(Repository $config, AuthManager $authManager)
     {
@@ -25,7 +25,7 @@ class CauserResolver
         $this->authDriver = $config['activitylog']['default_auth_driver'];
     }
 
-    public function resolve(Model | int | string | null $subject = null): ?Model
+    public function resolve(Authenticatable | int | string | null $subject = null): ?Authenticatable
     {
         if ($this->causerOverride !== null) {
             return $this->causerOverride;
@@ -44,21 +44,21 @@ class CauserResolver
         return $this->getCauser($subject);
     }
 
-    protected function resolveUsingId(int | string $subject): Model
+    protected function resolveUsingId(int | string $subject): Authenticatable
     {
         $guard = $this->authManager->guard($this->authDriver);
 
         $provider = method_exists($guard, 'getProvider') ? $guard->getProvider() : null;
-        $model = method_exists($provider, 'retrieveById') ? $provider->retrieveById($subject) : null;
+        $Authenticatable = method_exists($provider, 'retrieveById') ? $provider->retrieveById($subject) : null;
 
-        throw_unless($model instanceof Model, CouldNotLogActivity::couldNotDetermineUser($subject));
+        throw_unless($Authenticatable instanceof Authenticatable, CouldNotLogActivity::couldNotDetermineUser($subject));
 
-        return $model;
+        return $Authenticatable;
     }
 
-    protected function getCauser(Model | int | string | null $subject = null): ?Model
+    protected function getCauser(Authenticatable | int | string | null $subject = null): ?Authenticatable
     {
-        if ($subject instanceof Model) {
+        if ($subject instanceof Authenticatable) {
             return $subject;
         }
 
@@ -82,19 +82,19 @@ class CauserResolver
     /**
      * Override default causer.
      */
-    public function setCauser(?Model $causer): static
+    public function setCauser(?Authenticatable $causer): static
     {
         $this->causerOverride = $causer;
 
         return $this;
     }
 
-    protected function isResolvable(mixed $model): bool
+    protected function isResolvable(mixed $Authenticatable): bool
     {
-        return $model instanceof Model || is_null($model);
+        return $Authenticatable instanceof Authenticatable || is_null($Authenticatable);
     }
 
-    protected function getDefaultCauser(): ?Model
+    protected function getDefaultCauser(): ?Authenticatable
     {
         return $this->authManager->guard($this->authDriver)->user();
     }

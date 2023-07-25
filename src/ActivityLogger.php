@@ -4,6 +4,7 @@ namespace Spatie\Activitylog;
 
 use Closure;
 use DateTimeInterface;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -57,7 +58,7 @@ class ActivityLogger
         return $this->performedOn($model);
     }
 
-    public function causedBy(Model | int | string | null $modelOrId): static
+    public function causedBy(Authenticatable | int | string | null $modelOrId): static
     {
         if ($modelOrId === null) {
             return $this;
